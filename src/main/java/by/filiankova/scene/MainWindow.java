@@ -5,6 +5,8 @@ import by.filiankova.math.Vector3i;
 import by.filiankova.math.Vector4f;
 import by.filiankova.parser.ObjData;
 import by.filiankova.parser.ObjParser;
+import by.filiankova.scene.listener.CameraMouseListener;
+import by.filiankova.scene.listener.KeyboardListener;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,14 +39,20 @@ public class MainWindow {
         Graphics g = bs.getDrawGraphics();
 
         ObjParser parser = new ObjParser();
-        ObjData objData = parser.parseFile("src/main/resources/cube.obj");
+        ObjData objData = parser.parseFile("src/main/resources/sword.obj");
 
         Model model = new Model(
-                Matrix4f.translation(new Vector4f(100, 100, 0)),
+                Matrix4f.translation(new Vector4f(0, 0, 10)),
                 Matrix4f.rotation(new Vector4f(0, 0, 0)),
                 Matrix4f.scale(new Vector4f(1.0f, 1.0f, 1.0f)),
                 objData.getVertices(),
                 objData.getSurfaces());
+
+        KeyboardListener keyboardKeyListener = new KeyboardListener(screen.getCamera());
+        frame.addKeyListener(keyboardKeyListener);
+        CameraMouseListener cameraMouseListener = new CameraMouseListener(screen.getCamera());
+        frame.addMouseListener(cameraMouseListener);
+        frame.addMouseMotionListener(cameraMouseListener);
 
         while (true) {
             screen.clear();
