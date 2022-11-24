@@ -8,7 +8,9 @@ import lombok.Getter;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
+import static by.filiankova.math.Vector4f.normalize;
 import static java.lang.Math.abs;
+import static java.lang.Math.cos;
 
 public class Screen {
     private final int width;
@@ -43,9 +45,20 @@ public class Screen {
                 Vector4f v1 = mvp.multiply(vertices.get(face.get(0).x));
                 Vector4f v2 = mvp.multiply(vertices.get(face.get(i).x));
                 Vector4f v3 = mvp.multiply(vertices.get(face.get(i + 1).x));
-                drawTriangle(v1, v2, v3);
+                if (!isBackface(v1,v2,v3)){
+                    drawTriangle(v1, v2, v3);
+                }
             }
         }
+    }
+
+    private boolean isBackface(Vector4f v1, Vector4f v2, Vector4f v3) {
+        Vector4f side1 = v2.minus(v1);
+        Vector4f side2 = v3.minus(v1);
+        Vector4f triangleNormal = normalize(side1).cross(normalize(side2));
+        Vector4f gaze = camera.getTarget().minus(camera.getEye());
+        gaze.w = 0;
+        return triangleNormal.dot(normalize(gaze)) < cos(Math.PI / 180.f * 120.f);
     }
 
     public void drawTriangle(Vector4f v1, Vector4f v2, Vector4f v3) {
