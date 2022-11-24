@@ -6,11 +6,12 @@ import by.filiankova.math.Vector4f;
 import lombok.Getter;
 
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static by.filiankova.math.Vector4f.normalize;
-import static java.lang.Math.abs;
-import static java.lang.Math.cos;
+import static java.lang.Math.*;
 
 public class Screen {
     private final int width;
@@ -71,29 +72,99 @@ public class Screen {
         int x2 = (int) (v2.x / v2.w * (float) width / 2.f) + width / 2;
         int x3 = (int) (v3.x / v3.w * (float) width / 2.f) + width / 2;
 
-        int y1 = ((int) (v1.y / v1.w * (float) height / 2.f) + height / 2);
-        int y2 = ((int) (v2.y / v2.w * (float) height / 2.f) + height / 2);
-        int y3 = ((int) (v3.y / v3.w * (float) height / 2.f) + height / 2);
+        int y1 = (int) (v1.y / v1.w * (float) height / 2.f) + height / 2;
+        int y2 = (int) (v2.y / v2.w * (float) height / 2.f) + height / 2;
+        int y3 = (int) (v3.y / v3.w * (float) height / 2.f) + height / 2;
 
-        int white = colorOf(255, 255, 255, 255);
-        drawLine(x1, x2, y1, y2, white);
-        drawLine(x2, x3, y2, y3, white);
-        drawLine(x3, x1, y3, y1, white);
+        float avgZ = (v1.z + v2.z + v3.z) / 3.f;
+
+        if (y1 > y2) {
+            int tmp = y1;
+            y1 = y2;
+            y2 = tmp;
+            tmp = x1;
+            x1 = x2;
+            x2 = tmp;
+        }
+        if (y1 > y3) {
+            int tmp = y1;
+            y1 = y3;
+            y3 = tmp;
+            tmp = x1;
+            x1 = x3;
+            x3 = tmp;
+        }
+        if (y2 > y3) {
+            int tmp = y2;
+            y2 = y3;
+            y3 = tmp;
+            tmp = x2;
+            x2 = x3;
+            x3 = tmp;
+        }
+
+
+        int color = colorOf(0, 255, 0, 255);
+
+        Map<Integer, Integer> side1 = getLineCoords(x1, x2, y1, y2);
+        Map<Integer, Integer> side2 = getLineCoords(x1, x3, y1, y3);
+        Map<Integer, Integer> side3 = getLineCoords(x2, x3, y2, y3);
+
+        for (int i = bound(height, y1); i <= bound(height, y2); i++) {
+            if (side1.containsKey(i) && side2.containsKey(i)) {
+                drawLine(bound(width, side1.get(i)), bound(width, side2.get(i)), i, i, color, avgZ);
+            }
+        }
+
+        for (int i = bound(height, y2); i <= bound(height, y3); i++) {
+            if (side2.containsKey(i) && side3.containsKey(i)) {
+                drawLine(bound(width, side3.get(i)), bound(width, side2.get(i)), i, i, color, avgZ);
+            }
+        }
+
+        drawLine(x1, x2, y1, y2, color, avgZ);
+        drawLine(x2, x3, y2, y3, color, avgZ);
+        drawLine(x3, x1, y3, y1, color, avgZ);
     }
 
     public static int colorOf(int r, int g, int b, int a) {
         return ((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
     }
 
-    public void drawLine(int x1, int x2, int y1, int y2, int color) {
+    private Map<Integer, Integer> getLineCoords(int x1, int x2, int y1, int y2) {
+        Map<Integer, Integer> lineCoord = new HashMap<>();
+        int deltaX = abs(x2 - x1);
+        int deltaY = -abs(y2 - y1);
+        int signX = x1 < x2 ? 1 : -1;
+        int signY = y1 < y2 ? 1 : -1;
+
+        int err = deltaX + deltaY;
+        lineCoord.putIfAbsent(y1, x1);
+        while (x1 != x2 || y1 != y2) {
+            lineCoord.putIfAbsent(y1, x1);
+            int err2 = err * 2; // -8
+            if (err2 >= deltaY) {
+                err += deltaY;
+                x1 += signX;
+            }
+            if (err2 <= deltaX) {
+                err += deltaX;
+                y1 += signY;
+            }
+        }
+        lineCoord.putIfAbsent(y1, x1);
+        return lineCoord;
+    }
+
+    public void drawLine(int x1, int x2, int y1, int y2, int color, float z) {
         int dx = Math.abs(x2 - x1);
         int sx = x1 < x2 ? 1 : -1;
         int dy = -Math.abs(y2-y1);
         int sy = y1 < y2 ? 1 : -1;
         int err = dx + dy;
-        drawPixel(x1, y1, color);
+        drawPixel(x1, y1, color, z);
         while (x1 != x2 || y1 != y2) {
-            drawPixel(x1, y1, color);
+            drawPixel(x1, y1, color, z);
             int err2 = err * 2;
             if (err2 >= dy) {
                 err += dy;
@@ -104,12 +175,16 @@ public class Screen {
                 y1 += sy;
             }
         }
-        drawPixel(x1, y1, color);
+        drawPixel(x1, y1, color, z);
     }
 
-    public void drawPixel(int x, int y, int color) {
+    public void drawPixel(int x, int y, int color, float z) {
         if (x >= 0 & x < width && y >= 0 && y < height)
             bufferedImage.setRGB(x, height - 1 - y, color);
+    }
+
+    private int bound(int max, int v) {
+        return Math.max(min(v, max), 0);
     }
 
     public void clear() {
