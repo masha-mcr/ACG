@@ -25,7 +25,8 @@ public class ObjParser {
             Scanner scanner = new Scanner(new StringReader(line));
             scanner.useDelimiter(" ");
             String symbol = scanner.next();
-            if (symbol.charAt(0) == '#' || symbol.equals("mtllib") || symbol.equals("o") || symbol.equals("g")) {
+            if (symbol.charAt(0) != 'v' && !symbol.equals("vn") && !symbol.equals("vt") &&
+                    symbol.charAt(0) != 'f' && !symbol.equals("vp")) {
                 continue;
             }
             switch (symbol) {

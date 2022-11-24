@@ -1,16 +1,17 @@
 package by.filiankova.scene;
 
 import by.filiankova.math.Matrix4f;
-import by.filiankova.math.Vector3i;
 import by.filiankova.math.Vector4f;
 import by.filiankova.parser.ObjData;
 import by.filiankova.parser.ObjParser;
 import by.filiankova.scene.listener.CameraMouseListener;
-import by.filiankova.scene.listener.KeyboardListener;
+import by.filiankova.scene.listener.CameraKeyboardListener;
+import by.filiankova.scene.listener.ModelKeyboardListener;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferStrategy;
+
 
 
 public class MainWindow {
@@ -31,7 +32,6 @@ public class MainWindow {
         this.height = height;
         frame = initFrame();
         screen = new Screen(width, height);
-        System.out.println("window created");
     }
     public void start(){
         frame.createBufferStrategy(1);
@@ -39,7 +39,8 @@ public class MainWindow {
         Graphics g = bs.getDrawGraphics();
 
         ObjParser parser = new ObjParser();
-        ObjData objData = parser.parseFile("src/main/resources/sword.obj");
+        ObjData objData = parser.parseFile("src/main/resources/model1.obj");
+
 
         Model model = new Model(
                 Matrix4f.translation(new Vector4f(0, 0, 10)),
@@ -48,11 +49,12 @@ public class MainWindow {
                 objData.getVertices(),
                 objData.getSurfaces());
 
-        KeyboardListener keyboardKeyListener = new KeyboardListener(screen.getCamera());
-        frame.addKeyListener(keyboardKeyListener);
+
+        frame.addKeyListener(new CameraKeyboardListener(screen.getCamera()));
         CameraMouseListener cameraMouseListener = new CameraMouseListener(screen.getCamera());
         frame.addMouseListener(cameraMouseListener);
         frame.addMouseMotionListener(cameraMouseListener);
+        frame.addKeyListener(new ModelKeyboardListener(model));
 
         while (true) {
             screen.clear();

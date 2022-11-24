@@ -111,24 +111,26 @@ public class Matrix4f {
         );
     }
 
-    public static Matrix4f rotation(Vector4f rotationVec) {
-        Matrix4f rotationX = new Matrix4f(
-                new Vector4f(1, 0, 0, 0),
-                new Vector4f(0, (float) cos(rotationVec.x), -(float) sin(rotationVec.x), 0),
-                new Vector4f(0, (rotationVec.x), (float) cos(rotationVec.x), 0),
-                new Vector4f(0, 0, 0, 1));
-        Matrix4f rotationY = new Matrix4f(
-                new Vector4f((float) cos(rotationVec.y), 0, (float) sin(rotationVec.y), 0),
-                new Vector4f(0, 1, 0, 0),
-                new Vector4f(-(float) sin(rotationVec.y), 0, (float) cos(rotationVec.y), 0),
-                new Vector4f(0, 0, 0, 1));
-        Matrix4f rotationZ = new Matrix4f(
-                new Vector4f((float) cos(rotationVec.z), -(float) sin(rotationVec.z), 0, 0),
-                new Vector4f((float) sin(rotationVec.z), (float) cos(rotationVec.z), 0, 0),
-                new Vector4f(0, 0, 1, 0),
-                new Vector4f(0, 0, 0, 1));
+    static float cos(double a) {
+        return (float) Math.cos(a);
+    }
 
-        return rotationX.multiply(rotationY).multiply(rotationZ);
+    static float sin(double a) {
+        return (float) Math.sin(a);
+    }
+
+    public static Matrix4f rotation(Vector4f rotationVec) {
+        float yaw = rotationVec.x;
+        float pitch = rotationVec.y;
+        float roll = rotationVec.z;
+        return
+                new Matrix4f(
+                        new Vector4f(cos(yaw) * cos(pitch), cos(yaw) * sin(pitch) * sin(roll) - sin(yaw) * cos(roll), cos(yaw) * sin(pitch) * cos(roll) + sin(yaw) * sin(roll), 0),
+                        new Vector4f(sin(yaw) * cos(pitch), sin(yaw) * sin(pitch) * sin(roll) + cos(yaw) * cos(roll), sin(yaw) * sin(pitch) * cos(roll) - cos(yaw) * sin(roll), 0),
+                        new Vector4f(-sin(pitch), cos(pitch) * sin(roll), cos(pitch) * cos(roll), 0),
+                        new Vector4f(0, 0, 0, 1)
+                );
+
     }
 
     public static Matrix4f scale(Vector4f scaleVec) {

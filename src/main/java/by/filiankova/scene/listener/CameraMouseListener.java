@@ -10,8 +10,8 @@ import java.awt.event.MouseMotionListener;
 @RequiredArgsConstructor
 public class CameraMouseListener implements MouseListener, MouseMotionListener {
     private final Camera camera;
-    private int prevX = -1;
-    private int prevY = -1;
+    private int prevX = 500;
+    private int prevY = 400;
     private boolean isMoving;
 
     @Override

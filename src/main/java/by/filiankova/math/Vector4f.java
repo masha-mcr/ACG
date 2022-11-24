@@ -58,7 +58,7 @@ public class Vector4f {
 
     public static Vector4f normalize(Vector4f v) {
         float length = v.length();
-        return new Vector4f(v.x / length, v.y / length, v.z / length, v.w);
+        return length == 0 ? new Vector4f(0, 0, 0, 0) : new Vector4f(v.x / length, v.y / length, v.z / length, v.w);
     }
 
     public Vector4f mul(float scale) {

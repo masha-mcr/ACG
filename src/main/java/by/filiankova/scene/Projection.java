@@ -26,7 +26,9 @@ public class Projection {
         float sx = (1.f / (float) tan(radians / 2.f)) / aspect;
         float sy = (1.f / (float) tan(radians / 2.f));
         float sz = (far + near) / (near - far);
+        //float sz = near / (near - far);
         float dz = (2.f * far * near) / (near - far);
+        //float dz = (far * near) / (near - far);
         projection = new Matrix4f(
                 new Vector4f(sx, 0, 0, 0),
                 new Vector4f(0, sy, 0, 0),

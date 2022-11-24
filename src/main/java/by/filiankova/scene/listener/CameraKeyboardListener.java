@@ -7,7 +7,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 @RequiredArgsConstructor
-public class KeyboardListener implements KeyListener {
+public class CameraKeyboardListener implements KeyListener {
     private final Camera camera;
 
     @Override

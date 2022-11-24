@@ -27,7 +27,7 @@ public class Screen {
         bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
         camera = new Camera(0.3f, new Vector4f(0, 0, 0), new Vector4f(0, 0, 1), new Vector4f(0, 1, 0));
-        projection = new Projection(45, 1.33f, 0, 100);
+        projection = new Projection(65, 1.33f, 0, 100);
     }
 
     public void drawModel(Model model) {
@@ -62,10 +62,10 @@ public class Screen {
         int y2 = ((int) (v2.y / v2.w * (float) height / 2.f) + height / 2);
         int y3 = ((int) (v3.y / v3.w * (float) height / 2.f) + height / 2);
 
-        int blue = colorOf(0, 0, 255, 255);
-        drawLine(x1, x2, y1, y2, blue);
-        drawLine(x2, x3, y2, y3, blue);
-        drawLine(x3, x1, y3, y1, blue);
+        int white = colorOf(255, 255, 255, 255);
+        drawLine(x1, x2, y1, y2, white);
+        drawLine(x2, x3, y2, y3, white);
+        drawLine(x3, x1, y3, y1, white);
     }
 
     public static int colorOf(int r, int g, int b, int a) {
@@ -73,30 +73,25 @@ public class Screen {
     }
 
     public void drawLine(int x1, int x2, int y1, int y2, int color) {
-        int deltaX = abs(x2 - x1); // 2
-        int deltaY = abs(y2 - y1); // 6
-        int signX = x1 < x2 ? 1 : -1; // -1
-        int signY = y1 < y2 ? 1 : -1; // -1
-
-        if (abs(deltaX) > width * 4 || abs(deltaY) > height * 4) {
-            return;
-        }
-
-        int error = deltaX - deltaY;
-
+        int dx = Math.abs(x2 - x1);
+        int sx = x1 < x2 ? 1 : -1;
+        int dy = -Math.abs(y2-y1);
+        int sy = y1 < y2 ? 1 : -1;
+        int err = dx + dy;
         drawPixel(x1, y1, color);
         while (x1 != x2 || y1 != y2) {
             drawPixel(x1, y1, color);
-            int error2 = error * 2; // -8
-            if (error2 > -deltaY) {
-                error -= deltaY;
-                x1 += signX;
+            int err2 = err * 2;
+            if (err2 >= dy) {
+                err += dy;
+                x1 += sx;
             }
-            if (error2 < deltaX) {
-                error += deltaX;
-                y1 += signY;
+            if (err2 <= dx) {
+                err += dx;
+                y1 += sy;
             }
         }
+        drawPixel(x1, y1, color);
     }
 
     public void drawPixel(int x, int y, int color) {
