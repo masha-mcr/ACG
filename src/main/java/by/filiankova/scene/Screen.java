@@ -103,23 +103,35 @@ public class Screen {
             x3 = tmp;
         }
 
-
         int color = colorOf(0, 255, 0, 255);
 
-        Map<Integer, Integer> side1 = getLineCoords(x1, x2, y1, y2);
-        Map<Integer, Integer> side2 = getLineCoords(x1, x3, y1, y3);
-        Map<Integer, Integer> side3 = getLineCoords(x2, x3, y2, y3);
+        float slope21 = y2 == y1 ? 0 : (float)(x2-x1)/(y2-y1);
+        float slope31 = y3 == y1 ? 0 : (float)(x3-x1)/(y3-y1);
+        float slope32 = y3 == y2 ? 0 : (float)(x3-x2)/(y3-y2);
 
-        for (int i = bound(height, y1); i <= bound(height, y2); i++) {
-            if (side1.containsKey(i) && side2.containsKey(i)) {
-                drawLine(bound(width, side1.get(i)), bound(width, side2.get(i)), i, i, color, avgZ);
+        float x_start = x1;
+        float x_finish = x1;
+
+        if(y1 != y2){
+            for (int i = y1; i < y2; i++) {
+                if (isInViewport((int) ceil(x_start), width) & isInViewport((int) ceil(x_finish), width) & isInViewport(i, height)) {
+                    drawHorizontal((int) ceil(x_start), (int) ceil(x_finish), i, color, avgZ);
+                }
+                x_start += slope21;
+                x_finish += slope31;
             }
         }
+        else{
+            x_start = x2;
+            x_finish = x1;
+        }
 
-        for (int i = bound(height, y2); i <= bound(height, y3); i++) {
-            if (side2.containsKey(i) && side3.containsKey(i)) {
-                drawLine(bound(width, side3.get(i)), bound(width, side2.get(i)), i, i, color, avgZ);
+        for (int i = y2; i < y3; i++) {
+            if (isInViewport((int) ceil(x_start), width) & isInViewport((int) ceil(x_finish), width) & isInViewport(i, height)) {
+                drawHorizontal((int) ceil(x_start), (int) ceil(x_finish), i, color, avgZ);
             }
+            x_start += slope32;
+            x_finish += slope31;
         }
 
         drawLine(x1, x2, y1, y2, color, avgZ);
@@ -129,6 +141,10 @@ public class Screen {
 
     public static int colorOf(int r, int g, int b, int a) {
         return ((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
+    }
+
+    private boolean isInViewport(int coord, int boundary){
+        return coord >= 0 & coord <= boundary;
     }
 
     private Map<Integer, Integer> getLineCoords(int x1, int x2, int y1, int y2) {
@@ -176,6 +192,17 @@ public class Screen {
             }
         }
         drawPixel(x1, y1, color, z);
+    }
+
+    public void drawHorizontal(int x_start, int x_finish, int y, int color, float z) {
+        if (x_start > x_finish){
+            int tmp = x_start;
+            x_start = x_finish;
+            x_finish = tmp;
+        }
+        for (int i = x_start; i <= x_finish; i++){
+            drawPixel(i, y, color, z);
+        }
     }
 
     public void drawPixel(int x, int y, int color, float z) {
