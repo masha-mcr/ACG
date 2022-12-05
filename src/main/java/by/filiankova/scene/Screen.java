@@ -6,14 +6,13 @@ import by.filiankova.math.Vector4f;
 import lombok.Getter;
 
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static by.filiankova.math.Vector4f.normalize;
 import static java.lang.Math.*;
 
 public class Screen {
+    static final Vector4f lightDirection = new Vector4f(2, -1, 1);
     private final int width;
     private final int height;
 
@@ -23,6 +22,7 @@ public class Screen {
 
     @Getter
     private final BufferedImage bufferedImage;
+    private float[] zBuffer;
 
     public Screen(int width, int height) {
         this.width = width;
@@ -31,6 +31,7 @@ public class Screen {
 
         camera = new Camera(0.3f, new Vector4f(0, 0, 0), new Vector4f(0, 0, 1), new Vector4f(0, 1, 0));
         projection = new Projection(65, 1.33f, 0, 100);
+        zBuffer = new float[width * height];
     }
 
     public void drawModel(Model model) {
@@ -43,11 +44,17 @@ public class Screen {
         for (List<Vector3i> face : model.getFaces()) {
             int verticesPerFace = face.size();
             for (int i = 1; i < verticesPerFace - 1; i++) {
-                Vector4f v1 = mvp.multiply(vertices.get(face.get(0).x));
-                Vector4f v2 = mvp.multiply(vertices.get(face.get(i).x));
-                Vector4f v3 = mvp.multiply(vertices.get(face.get(i + 1).x));
-                if (!isBackface(v1,v2,v3)){
-                    drawTriangle(v1, v2, v3);
+                Vector4f v1 = vertices.get(face.get(0).x);
+                Vector4f v2 = vertices.get(face.get(i).x);
+                Vector4f v3 = vertices.get(face.get(i + 1).x);
+                Vector4f v1mvp = mvp.multiply(v1);
+                Vector4f v2mvp = mvp.multiply(v2);
+                Vector4f v3mvp = mvp.multiply(v3);
+                Vector4f v1model = modelMatr.multiply(v1);
+                Vector4f v2model = modelMatr.multiply(v2);
+                Vector4f v3model = modelMatr.multiply(v3);
+                if (!isBackface(v1mvp,v2mvp,v3mvp)){
+                    drawTriangle(v1mvp, v2mvp, v3mvp, getColorWithLight(v1model, v2model, v3model));
                 }
             }
         }
@@ -56,13 +63,16 @@ public class Screen {
     private boolean isBackface(Vector4f v1, Vector4f v2, Vector4f v3) {
         Vector4f side1 = v2.minus(v1);
         Vector4f side2 = v3.minus(v1);
-        Vector4f triangleNormal = normalize(side1).cross(normalize(side2));
-        Vector4f gaze = camera.getTarget().minus(camera.getEye());
-        gaze.w = 0;
-        return triangleNormal.dot(normalize(gaze)) < cos(Math.PI / 180.f * 120.f);
+        double cos = side1.x * side2.y - side1.y * side2.x;
+        return cos < 0;
     }
 
-    public void drawTriangle(Vector4f v1, Vector4f v2, Vector4f v3) {
+
+    private int bound(int max, int v) {
+        return Math.max(min(v, max), 0);
+    }
+
+    public void drawTriangle(Vector4f v1, Vector4f v2, Vector4f v3, int color) {
 
         if (!(v1.z > 0 && v2.z > 0 && v3.z > 0)) {
             return;
@@ -103,17 +113,16 @@ public class Screen {
             x3 = tmp;
         }
 
-        int color = colorOf(0, 255, 0, 255);
 
         float slope21 = y2 == y1 ? 0 : (float)(x2-x1)/(y2-y1);
         float slope31 = y3 == y1 ? 0 : (float)(x3-x1)/(y3-y1);
         float slope32 = y3 == y2 ? 0 : (float)(x3-x2)/(y3-y2);
 
-        float x_start = x1;
-        float x_finish = x1;
+        float x_start = bound(x1, width);
+        float x_finish = bound(x1, width);
 
         if(y1 != y2){
-            for (int i = y1; i < y2; i++) {
+            for (int i = bound(y1, height); i < bound(y2, height); i++) {
                 if (isInViewport((int) ceil(x_start), width) & isInViewport((int) ceil(x_finish), width) & isInViewport(i, height)) {
                     drawHorizontal((int) ceil(x_start), (int) ceil(x_finish), i, color, avgZ);
                 }
@@ -122,11 +131,11 @@ public class Screen {
             }
         }
         else{
-            x_start = x2;
-            x_finish = x1;
+            x_start = bound(x2, width);;
+            x_finish = bound(x1, width);;
         }
 
-        for (int i = y2; i < y3; i++) {
+        for (int i = bound(y2, height); i < bound(y3, height); i++) {
             if (isInViewport((int) ceil(x_start), width) & isInViewport((int) ceil(x_finish), width) & isInViewport(i, height)) {
                 drawHorizontal((int) ceil(x_start), (int) ceil(x_finish), i, color, avgZ);
             }
@@ -145,31 +154,6 @@ public class Screen {
 
     private boolean isInViewport(int coord, int boundary){
         return coord >= 0 & coord <= boundary;
-    }
-
-    private Map<Integer, Integer> getLineCoords(int x1, int x2, int y1, int y2) {
-        Map<Integer, Integer> lineCoord = new HashMap<>();
-        int deltaX = abs(x2 - x1);
-        int deltaY = -abs(y2 - y1);
-        int signX = x1 < x2 ? 1 : -1;
-        int signY = y1 < y2 ? 1 : -1;
-
-        int err = deltaX + deltaY;
-        lineCoord.putIfAbsent(y1, x1);
-        while (x1 != x2 || y1 != y2) {
-            lineCoord.putIfAbsent(y1, x1);
-            int err2 = err * 2; // -8
-            if (err2 >= deltaY) {
-                err += deltaY;
-                x1 += signX;
-            }
-            if (err2 <= deltaX) {
-                err += deltaX;
-                y1 += signY;
-            }
-        }
-        lineCoord.putIfAbsent(y1, x1);
-        return lineCoord;
     }
 
     public void drawLine(int x1, int x2, int y1, int y2, int color, float z) {
@@ -206,15 +190,33 @@ public class Screen {
     }
 
     public void drawPixel(int x, int y, int color, float z) {
-        if (x >= 0 & x < width && y >= 0 && y < height)
-            bufferedImage.setRGB(x, height - 1 - y, color);
-    }
-
-    private int bound(int max, int v) {
-        return Math.max(min(v, max), 0);
+        if (x >= 0 & x < width && y >= 0 && y < height) {
+            float normalizedZ = z / projection.far;
+            float initialBuf = zBuffer[y * width + x];
+            if (normalizedZ < initialBuf) {
+                zBuffer[y * width + x] = normalizedZ;
+                bufferedImage.setRGB(x, height - 1 - y, color);
+            }
+        }
     }
 
     public void clear() {
         bufferedImage.getGraphics().clearRect(0, 0, width, height);
+        zBuffer = new float[width * height];
+        for (int i = 0; i < width * height; i++) {
+            zBuffer[i] = 1.0f;
+        }
+    }
+
+    public int getColorWithLight(Vector4f v1, Vector4f v2, Vector4f v3) {
+
+        Vector4f side1 = new Vector4f(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z, 0);
+        Vector4f side2 = new Vector4f(v3.x - v1.x, v3.y - v1.y, v3.z - v1.z, 0);
+        Vector4f triangleNormal = normalize(side1).cross(normalize(side2));
+        Vector4f light = new Vector4f(-lightDirection.x, -lightDirection.y, -lightDirection.z, 0);
+        float coeff = normalize(triangleNormal).dot(normalize(light));
+        coeff = (coeff + 1.f) / 2.f;
+        return colorOf((int)(150.f * coeff), (int)(150.f * coeff), (int)(150.f * coeff), 255);
+
     }
 }
