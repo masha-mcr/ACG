@@ -39,7 +39,7 @@ public class MainWindow {
         Graphics g = bs.getDrawGraphics();
 
         ObjParser parser = new ObjParser();
-        ObjData objData = parser.parseFile("src/main/resources/cube.obj");
+        ObjData objData = parser.parseFile("src/main/resources/sphere.obj");
 
 
         Model model = new Model(
