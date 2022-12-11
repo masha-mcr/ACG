@@ -56,6 +56,14 @@ public class Vector4f {
                 1);
     }
 
+    public static Vector4f reflect(Vector4f reflectionVector, Vector4f normalVector) {
+        float dot = reflectionVector.dot(normalVector);
+        if (dot <= 0) {
+            return new Vector4f(0, 0, 0);
+        }
+        return reflectionVector.minus(normalVector.mul(dot * 2));
+    }
+
     public static Vector4f normalize(Vector4f v) {
         float length = v.length();
         return length == 0 ? new Vector4f(0, 0, 0, 0) : new Vector4f(v.x / length, v.y / length, v.z / length, v.w);

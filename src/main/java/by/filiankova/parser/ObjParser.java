@@ -78,7 +78,7 @@ public class ObjParser {
                     List<Vector3i> tmp = new ArrayList<>();
                     while (scanner.hasNext()) {
                         symbol = scanner.next();
-                        int[] params = {0, 0, 0};
+                        int[] params = {Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE};
                         int ind = 0;
                         int number = 0;
                         boolean sign = false;
@@ -99,6 +99,7 @@ public class ObjParser {
                                 }
                             }
                         }
+                        params[ind] = sign ? -number : number;
                         if (params[0] < 0) params[0] = vertices.size() + params[0] + 1;
                         if (params[1] < 0) params[1] = textures.size() + params[1] + 1;
                         if (params[2] < 0) params[2] = normals.size() + params[2] + 1;

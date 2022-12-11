@@ -39,7 +39,7 @@ public class MainWindow {
         Graphics g = bs.getDrawGraphics();
 
         ObjParser parser = new ObjParser();
-        ObjData objData = parser.parseFile("src/main/resources/suzanne.obj");
+        ObjData objData = parser.parseFile("src/main/resources/cube.obj");
 
 
         Model model = new Model(
@@ -47,7 +47,8 @@ public class MainWindow {
                 Matrix4f.rotation(new Vector4f(0, 0, 0)),
                 Matrix4f.scale(new Vector4f(1.0f, 1.0f, 1.0f)),
                 objData.getVertices(),
-                objData.getSurfaces());
+                objData.getSurfaces(),
+                objData.getNormals());
 
 
         frame.addKeyListener(new CameraKeyboardListener(screen.getCamera()));
