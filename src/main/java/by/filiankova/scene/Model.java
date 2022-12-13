@@ -4,12 +4,14 @@ import by.filiankova.math.Matrix4f;
 import by.filiankova.math.Vector3i;
 import by.filiankova.math.Vector4f;
 import lombok.Data;
+import lombok.Getter;
 
 import java.util.List;
 
 @Data
 public class Model {
     private Matrix4f translation;
+    @Getter
     private Matrix4f rotation;
     private Matrix4f scale;
 

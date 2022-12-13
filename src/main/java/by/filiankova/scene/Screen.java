@@ -12,6 +12,7 @@ import java.util.List;
 
 import static by.filiankova.math.Vector4f.normalize;
 import static by.filiankova.scene.ColorUtil.colorOf;
+import static java.lang.Float.NaN;
 import static java.lang.Math.*;
 
 public class Screen {
@@ -41,7 +42,7 @@ public class Screen {
 
     public void drawModel(Model model) {
         Matrix4f modelMatr = model.getModel();
-
+        Matrix4f rotation = model.getRotation();
         PhongShader shader = new PhongShader(lightSource, 0.7f);
         Vector4f modelColor = ColorUtil.rgbaVec(ColorUtil.BLUE);
 
@@ -62,7 +63,7 @@ public class Screen {
                 VertexData vd2 = new VertexData(v2, vn2, modelMatr, modelColor);
                 VertexData vd3 = new VertexData(v3, vn3, modelMatr, modelColor);
 
-                drawTriangle(vd1, vd2, vd3, shader);
+                drawTriangle(vd1, vd2, vd3, shader, rotation);
             }
         }
     }
@@ -82,7 +83,7 @@ public class Screen {
     private float edge(float x1, float x2, float y1, float y2, float px, float py) {
         return (px - x1) * (y2 - y1) - (py - y1) * (x2 - x1);
     }
-    public void drawTriangle(VertexData vd1, VertexData vd2, VertexData vd3, PhongShader shader) {
+    public void drawTriangle(VertexData vd1, VertexData vd2, VertexData vd3, PhongShader shader, Matrix4f rot) {
 
         Matrix4f mvp = vd1.modelMatr.multiply(camera.getViewMatrix()).multiply(projection.getProjectionMatrix());
 
@@ -91,9 +92,9 @@ public class Screen {
         Vector4f v3mvp = mvp.multiply(vd3.position);
         if (isBackface(v1mvp, v2mvp, v3mvp))
             return;
-        Vector4f vn1m = vd1.modelMatr.multiply(vd1.normal);
-        Vector4f vn2m = vd2.modelMatr.multiply(vd2.normal);
-        Vector4f vn3m = vd3.modelMatr.multiply(vd3.normal);
+        Vector4f vn1m = rot.multiply(vd1.normal);
+        Vector4f vn2m = rot.multiply(vd2.normal);
+        Vector4f vn3m = rot.multiply(vd3.normal);
 
         Vector4f v1m = vd1.modelMatr.multiply(vd1.position);
         Vector4f v2m = vd2.modelMatr.multiply(vd2.position);
@@ -111,8 +112,14 @@ public class Screen {
         int y2 = (int) (v2mvp.y / v2mvp.w * (float) height / 2.f) + height / 2;
         int y3 = (int) (v3mvp.y / v3mvp.w * (float) height / 2.f) + height / 2;
 
-        float avgZ = (v1mvp.z + v2mvp.z + v3mvp.z) / 3.f;
+        int x1_unsorted =  x1;
+        int x2_unsorted = x2;
+        int x3_unsorted = x3;
 
+        int y1_unsorted = y1;
+        int y2_unsorted = y2;
+        int y3_unsorted = y3;
+        
         if (y1 > y2) {
             int tmp = y1;
             y1 = y2;
@@ -120,6 +127,12 @@ public class Screen {
             tmp = x1;
             x1 = x2;
             x2 = tmp;
+            Vector4f tmp_vec = vn1m;
+            vn1m = vn2m;
+            vn2m = tmp_vec;
+            tmp_vec = v1m;
+            v1m = v2m;
+            v2m = tmp_vec;
         }
         if (y1 > y3) {
             int tmp = y1;
@@ -128,6 +141,12 @@ public class Screen {
             tmp = x1;
             x1 = x3;
             x3 = tmp;
+            Vector4f tmp_vec = vn1m;
+            vn1m = vn3m;
+            vn3m = tmp_vec;
+            tmp_vec = v1m;
+            v1m = v3m;
+            v3m = tmp_vec;
         }
         if (y2 > y3) {
             int tmp = y2;
@@ -136,6 +155,12 @@ public class Screen {
             tmp = x2;
             x2 = x3;
             x3 = tmp;
+            Vector4f tmp_vec = vn3m;
+            vn3m = vn2m;
+            vn2m = tmp_vec;
+            tmp_vec = v3m;
+            v3m = v2m;
+            v2m = tmp_vec;
         }
 
 
@@ -149,25 +174,27 @@ public class Screen {
         if(y1 != y2){
             for (int yi = bound(y1, height); yi < bound(y2, height); yi++) {
                 if (isInViewport((int) ceil(x_start), width) & isInViewport((int) ceil(x_finish), width) & isInViewport(yi, height)) {
-                    //drawHorizontal((int) ceil(x_start), (int) ceil(x_finish), i, ColorUtil.RED, avgZ);
                     int min_x = (int)min(ceil(x_start), ceil(x_finish));
                     int max_x = (int)max(ceil(x_start), ceil(x_finish));
                     for (int xi = min_x; xi <= max_x; xi++){
-                        float e1 = edge(x1, x2, y1, y2, xi, yi);
-                        float e2 = edge(x2, x3, y2, y3, xi, yi);
-                        float e3 = edge(x3, x1, y3, y1, xi, yi);
-                        float area = edge(x1, x2, y1, y2, x3, y3);
-                        float w3 = e1 / area;
-                        float w2 = e3 / area;
-                        float w1 = e2 / area;
+                        float e1 = edge(x2_unsorted, x3_unsorted, y2_unsorted, y3_unsorted, xi, yi);
+                        float e2 = edge(x3_unsorted, x1_unsorted, y3_unsorted, y1_unsorted, xi, yi);
+                        float e3 = edge(x1_unsorted, x2_unsorted, y1_unsorted, y2_unsorted, xi, yi);
+                        float area = edge(x1_unsorted, x2_unsorted, y1_unsorted, y2_unsorted, x3_unsorted, y3_unsorted);
 
-                        Vector4f pixelNormal = normalize(vn1m.mul(w1).plus(vn2m.mul(w2)).plus(vn3m.mul(w3)));
-                        Vector4f pixelModelPosition = v1m.mul(w1).plus(v2m.mul(w2)).plus(v3m.mul(w3));
-                        Vector4f pixelColor = vd1.color.mul(w1).plus(vd2.color.mul(w2)).plus(vd3.color.mul(w3));
+                            float w3 = abs(area) < 0.00001 ? (float) 1/3 : e1 / area;
+                            float w2 = abs(area) < 0.00001 ? (float) 1/3 : e3 / area;
+                            float w1 = abs(area) < 0.00001 ? (float) 1/3 : e2 / area;
 
-                        Vector4f finalColor = shader.getPixelColor(camera.getEye(), pixelNormal, pixelModelPosition, pixelColor);
+                            Vector4f pixelNormal = normalize(vn1m.mul(w1).plus(vn2m.mul(w2)).plus(vn3m.mul(w3)));
+                            Vector4f pixelModelPosition = v1m.mul(w1).plus(v2m.mul(w2)).plus(v3m.mul(w3));
+                            Vector4f pixelColor = vd1.color.mul(w1).plus(vd2.color.mul(w2)).plus(vd3.color.mul(w3));
 
-                        drawPixel( xi, yi, colorOf(finalColor), v1mvp.z * w1 + v2mvp.z * w2 + v3mvp.z * w3);
+                            Vector4f finalColor = shader.getPixelColor(camera.getEye(), pixelNormal, pixelModelPosition, pixelColor);
+                            if ((finalColor.x == 0 && finalColor.y == 0 && finalColor.z == 0) |
+                                    (finalColor.x == NaN && finalColor.y == NaN && finalColor.z == NaN))
+                                System.out.println("faulty triangle");
+                            drawPixel( xi, yi, colorOf(finalColor), v1mvp.z * w1 + v2mvp.z * w2 + v3mvp.z * w3);
 
                     }
                 }
@@ -186,20 +213,21 @@ public class Screen {
                 int min_x = (int)min(ceil(x_start), ceil(x_finish));
                 int max_x = (int)max(ceil(x_start), ceil(x_finish));
                 for (int xi = min_x; xi <= max_x; xi++){
-                    float e1 = edge(x1, x2, y1, y2, xi, yi);
-                    float e2 = edge(x2, x3, y2, y3, xi, yi);
-                    float e3 = edge(x3, x1, y3, y1, xi, yi);
-                    float area = edge(x1, x2, y1, y2, x3, y3);
-                    float w3 = e1 / area;
-                    float w2 = e3 / area;
-                    float w1 = e2 / area;
+                    float e1 = edge(x2_unsorted, x3_unsorted, y2_unsorted, y3_unsorted, xi, yi);
+                    float e2 = edge(x3_unsorted, x1_unsorted, y3_unsorted, y1_unsorted, xi, yi);
+                    float e3 = edge(x1_unsorted, x2_unsorted, y1_unsorted, y2_unsorted, xi, yi);
+                    float area = edge(x1_unsorted, x2_unsorted, y1_unsorted, y2_unsorted, x3_unsorted, y3_unsorted);
+                    float w3 = area < 0.00001 ? (float) 1/3 : e1 / area;
+                    float w2 = area < 0.00001 ? (float) 1/3 : e3 / area;
+                    float w1 = area < 0.00001 ? (float) 1/3 : e2 / area;
 
                     Vector4f pixelNormal = normalize(vn1m.mul(w1).plus(vn2m.mul(w2)).plus(vn3m.mul(w3)));
                     Vector4f pixelModelPosition = v1m.mul(w1).plus(v2m.mul(w2)).plus(v3m.mul(w3));
                     Vector4f pixelColor = vd1.color.mul(w1).plus(vd2.color.mul(w2)).plus(vd3.color.mul(w3));
 
                     Vector4f finalColor = shader.getPixelColor(camera.getEye(), pixelNormal, pixelModelPosition, pixelColor);
-
+                    if (Double.isNaN(finalColor.x) | Double.isNaN(finalColor.y) | Double.isNaN(finalColor.z))
+                        System.out.println(finalColor.x + " " + finalColor.y + " " + finalColor.z);
                     drawPixel( xi, yi, colorOf(finalColor), v1mvp.z * w1 + v2mvp.z * w2 + v3mvp.z * w3);
 
                 }
