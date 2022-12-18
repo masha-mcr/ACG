@@ -22,6 +22,17 @@ public class Vector4f {
         this.w = w;
     }
 
+    public Vector3f getXYZ(){
+        return new Vector3f(x,y,z);
+    }
+
+    public Vector4f(Vector3f v, float w) {
+        this.x = v.x;
+        this.y = v.y;
+        this.z = v.z;
+        this.w = w;
+    }
+
     public float length() {
         return (float)sqrt(x * x + y * y + z * z);
     }

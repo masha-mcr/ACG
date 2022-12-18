@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 public class LightSource {
     private Vector4f color;
-    private Vector4f position;
+    private Vector3f position;
     private float diffuseIntensity;
     private float specularIntensity;
 }

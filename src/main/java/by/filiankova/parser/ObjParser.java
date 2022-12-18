@@ -1,5 +1,6 @@
 package by.filiankova.parser;
 
+import by.filiankova.math.Vector3f;
 import by.filiankova.math.Vector3i;
 import by.filiankova.math.Vector4f;
 import lombok.SneakyThrows;
@@ -15,9 +16,9 @@ public class ObjParser {
     @SneakyThrows
     public ObjData parseFile(String filename) {
         List<String> lines = Files.readAllLines(Paths.get(filename));
-        List<Vector4f> vertices = new ArrayList<>();
+        List<Vector3f> vertices = new ArrayList<>();
         List<Vector4f> textures = new ArrayList<>();
-        List<Vector4f> normals = new ArrayList<>();
+        List<Vector3f> normals = new ArrayList<>();
         List<Vector4f> vertexParams = new ArrayList<>();
         List<List<Vector3i>> surfaces = new ArrayList<>();
 
@@ -31,14 +32,14 @@ public class ObjParser {
             }
             switch (symbol) {
                 case "v": {
-                    float[] f = {0, 0, 0, 1};
+                    float[] f = {0, 0, 0};
                     int i = 0;
                     while (scanner.hasNext()) {
                         float value = Float.parseFloat(scanner.next());
                         f[i] = value;
                         i++;
                     }
-                    vertices.add(new Vector4f(f[0], f[1], f[2], f[3]));
+                    vertices.add(new Vector3f(f[0], f[1], f[2]));
                     break;
                 }
                 case "vt": {
@@ -60,7 +61,7 @@ public class ObjParser {
                         f[i] = value;
                         i++;
                     }
-                    normals.add(new Vector4f(f[0], f[1], f[2]));
+                    normals.add(new Vector3f(f[0], f[1], f[2]));
                     break;
                 }
                 case "vp": {

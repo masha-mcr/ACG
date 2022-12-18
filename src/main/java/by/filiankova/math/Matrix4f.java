@@ -142,10 +142,10 @@ public class Matrix4f {
         );
     }
 
-    public static Matrix4f lookAt(Vector4f position, Vector4f target, Vector4f up) {
-        Vector4f direction = Vector4f.normalize(position.minus(target));
-        Vector4f right = Vector4f.normalize(up.cross(direction));
-        Vector4f actualUp = direction.cross(right);
+    public static Matrix4f lookAt(Vector3f position, Vector3f target, Vector3f up) {
+        Vector3f direction = Vector3f.normalize3(position.minus(target));
+        Vector3f right = Vector3f.normalize3(up.cross(direction));
+        Vector3f actualUp = direction.cross(right);
         Matrix4f lookAt = new Matrix4f(
                 new Vector4f(right.x, right.y, right.z, 0),
                 new Vector4f(actualUp.x, actualUp.y, actualUp.z, 0),
