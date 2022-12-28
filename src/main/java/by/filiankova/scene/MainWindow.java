@@ -39,7 +39,7 @@ public class MainWindow {
         Graphics g = bs.getDrawGraphics();
 
         ObjParser parser = new ObjParser();
-        ObjData objData = parser.parseFile("src/main/resources/suzanne.obj");
+        ObjData objData = parser.parseFile("src/main/resources/cube2.obj");
 
 
         Model model = new Model(
@@ -48,7 +48,12 @@ public class MainWindow {
                 Matrix4f.scale(new Vector4f(1.0f, 1.0f, 1.0f)),
                 objData.getVertices(),
                 objData.getSurfaces(),
-                objData.getNormals());
+                objData.getNormals(),
+                objData.getTextures(),
+                "src/main/resources/StandardCubeMap.png",
+                null, //"src/main/resources/models/normal1.png",
+                null//"src/main/resources/models/specular1.png"
+                );
 
 
         frame.addKeyListener(new CameraKeyboardListener(screen.getCamera()));

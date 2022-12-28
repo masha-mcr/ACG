@@ -1,12 +1,15 @@
 package by.filiankova.scene;
 
 import by.filiankova.math.Matrix4f;
+import by.filiankova.math.Vector2f;
 import by.filiankova.math.Vector3f;
 import by.filiankova.math.Vector3i;
-import by.filiankova.math.Vector4f;
 import lombok.Data;
 import lombok.Getter;
 
+import javax.imageio.ImageIO;
+import java.awt.image.Raster;
+import java.io.File;
 import java.util.List;
 
 @Data
@@ -18,22 +21,44 @@ public class Model {
 
     private final List<Vector3f> vertices;
     private final List<Vector3f> normals;
+    private final List<Vector2f> uvTextures;
     private final List<List<Vector3i>> faces;
-
+    private final Raster texture;
+    private final Raster normalMap;
+    private final Raster specularMap;
     private Matrix4f model;
 
     private void setModel() {
         model = scale.multiply(rotation).multiply(translation);
     }
 
-    public Model(Matrix4f translation, Matrix4f rotation, Matrix4f scale, List<Vector3f> vertices, List<List<Vector3i>> faces, List<Vector3f> normals) {
+    public Model(Matrix4f translation, Matrix4f rotation, Matrix4f scale, List<Vector3f> vertices, List<List<Vector3i>> faces, List<Vector3f> normals, List<Vector2f> uvTextures, String texturePath, String normalPath, String specPath) {
         this.translation = translation;
         this.rotation = rotation;
         this.scale = scale;
         this.vertices = vertices;
         this.faces = faces;
         this.normals = normals;
-
+        Raster imgTemp;
+        try {
+            imgTemp = ImageIO.read(new File(texturePath)).getRaster();
+        } catch (Exception e) {
+            imgTemp = null;
+        }
+        this.texture = imgTemp;
+        try {
+            imgTemp = ImageIO.read(new File(normalPath)).getRaster();
+        } catch (Exception e) {
+            imgTemp = null;
+        }
+        this.normalMap = imgTemp;
+        try {
+            imgTemp = ImageIO.read(new File(specPath)).getRaster();
+        } catch (Exception e) {
+            imgTemp = null;
+        }
+        this.specularMap = imgTemp;
+        this.uvTextures = uvTextures;
         setModel();
     }
 

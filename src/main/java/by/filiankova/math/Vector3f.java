@@ -51,4 +51,8 @@ public class Vector3f {
                 x * other.y - y * other.x
         );
     }
+
+    public Vector3f abs(){
+        return new Vector3f(Math.abs(x), Math.abs(y), Math.abs(z));
+    }
 }
