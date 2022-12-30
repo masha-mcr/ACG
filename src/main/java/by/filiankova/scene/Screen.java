@@ -10,7 +10,6 @@ import java.awt.image.Raster;
 import java.util.List;
 
 import static by.filiankova.math.Vector3f.normalize3;
-import static by.filiankova.math.Vector4f.normalize;
 import static by.filiankova.scene.ColorUtil.colorOf;
 import static by.filiankova.scene.ColorUtil.rgbaVec;
 import static java.lang.Integer.MAX_VALUE;
@@ -37,7 +36,7 @@ public class Screen {
         camera = new Camera(0.3f, new Vector3f(0, 0, 0), new Vector3f(0, 0, 1), new Vector3f(0, 1, 0));
         projection = new Projection(65, 1.33f, 0, 100);
         zBuffer = new float[width * height];
-        lightSource = new LightSource(rgbaVec(ColorUtil.WHITE), new Vector3f(10, 10 , 0), 0.5f, 0.3f);
+        lightSource = new LightSource(rgbaVec(ColorUtil.WHITE), new Vector3f(10, 10 , 0), 0.3f, 0.3f);
     }
 
     public void drawModel(Model model) {
@@ -194,10 +193,27 @@ public class Screen {
                     int sNormal = (int)(s * nWidth);
                     int tNormal = (int)(nHeight * (1 - t));
 
-                    Vector3f cubemapData = getFromCubemap(new Vector3f(x, y, z));
-                    int faceIndex = (int) cubemapData.z;
-                    s = cubemapData.x;
-                    t = cubemapData.y;
+                    int faceIndex = getFaceIndex(new Vector3f(
+                            vd1.position.x * w1 + vd2.position.x * w2 + vd3.position.x * w3,
+                            vd1.position.y * w1 + vd2.position.y * w2 + vd3.position.y * w3,
+                            vd1.position.z * w1 + vd2.position.z * w2 + vd3.position.z * w3
+                    ));
+                    if (faceIndex == 4 || faceIndex == 0 || faceIndex == 3) {
+                        s = 1 - s;
+                        t = 1 - t;
+                    }
+                    if (faceIndex == 1) {
+                        float temp = s;
+                        s = 1 - t;
+                        t = temp;
+                    }
+                    if (faceIndex == 2) {
+                        float temp = s;
+                        s = t;
+                        t = 1 - temp;
+                    }
+                    if (s < 0 || t < 0) continue;
+
                     sTexture = (int)(s * cubeWidth) + cubefaceStartX[faceIndex]*cubeWidth;
                     tTexture = (int)(cubeHeight * (1 - t)) + cubefaceStartY[faceIndex]*cubeHeight;
                     int[] pixelColorArr = texture.getPixel(sTexture, tTexture, color);
@@ -208,15 +224,15 @@ public class Screen {
                     float specularCoefficient = specularMap == null ? 0 : specularArr[0] / 255f;
 
                     Vector3f pixelNormal;
-                    if (normalMap == null) {
-                        Vector3f normalVector = vd1.color.mul(w1).plus(vd2.color.mul(w2)).plus(vd3.color.mul(w3)).getXYZ();
+//                    if (normalMap == null) {
+                        Vector3f normalVector = v1n.mul(w1).plus(v2n.mul(w2)).plus(v3n.mul(w3));
                         pixelNormal = normalize3(normalVector);
-                    }
-                    else {
-                        Vector3f normalFromMap = new Vector3f(normalArr[0], normalArr[1], normalArr[2]).mul(2)
-                                .minus(new Vector3f(256f, 256f, 256f));
-                        pixelNormal = normalize3(vd1.modelMatr.multiply(new Vector4f(normalFromMap, 0)).getXYZ());
-                    }
+//                    }
+//                    else {
+//                        Vector3f normalFromMap = new Vector3f(normalArr[0], normalArr[1], normalArr[2]).mul(2)
+//                                .minus(new Vector3f(256f, 256f, 256f));
+//                        pixelNormal = normalize3(vd1.modelMatr.multiply(new Vector4f(normalFromMap, 0)).getXYZ());
+//                    }
                     Vector4f pixelColor = rgbaVec(colorOf(pixelColorArr[0], pixelColorArr[1], pixelColorArr[2], 255));
                     PixelData pixelData = new PixelData(pixelNormal, pixelModelPosition, pixelColor, specularCoefficient);
                     Vector4f finalColor = shader.getPixelColor(cameraPosition, pixelData);
@@ -239,32 +255,23 @@ public class Screen {
         }
     }
 
-    private Vector3f getFromCubemap(Vector3f v)
+    private int getFaceIndex(Vector3f v)
     {
         Vector3f vAbs = v.abs();
-        float ma;
-        Vector2f uv;
-        float faceIndex;
+        int faceIndex;
         if(vAbs.z >= vAbs.x && vAbs.z >= vAbs.y)
         {
-            faceIndex = v.z < 0.0 ? 5.0f : 4.0f;
-            ma = 0.5f / vAbs.z;
-            uv = new Vector2f(v.z < 0.0 ? -v.x : v.x, -v.y);
+            faceIndex = v.z < 0.0 ? 5 : 4;
         }
         else if(vAbs.y >= vAbs.x)
         {
-            faceIndex = v.y < 0.0 ? 3.0f : 2.0f;
-            ma = 0.5f / vAbs.y;
-            uv = new Vector2f(v.x, v.y < 0.0 ? -v.z : v.z);
+            faceIndex = v.y < 0.0 ? 3 : 2;
         }
         else
         {
-            faceIndex = v.x < 0.0 ? 1.0f : 0.0f;
-            ma = 0.5f / vAbs.x;
-            uv = new Vector2f(v.x < 0.0 ? v.z : -v.z, -v.y);
+            faceIndex = v.x < 0.0 ? 1 : 0;
         }
-        Vector2f newUV = uv.mul(ma).plus(0.5f);
-        return new Vector3f(newUV.x, newUV.y, faceIndex);
+        return faceIndex;
     }
 
 }

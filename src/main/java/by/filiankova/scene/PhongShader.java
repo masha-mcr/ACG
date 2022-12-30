@@ -25,8 +25,10 @@ public class PhongShader {
         Vector3f pixelToLightVector = normalize3(lightSource.getPosition().minus(pixelData.getPixelModelPosition()));
         Vector3f reflectedLightVector = normalize3(reflect3(pixelToLightVector, pixelData.getPixelNormal()));// R
 
+
         float diffuseCoeff = max(0, pixelData.getPixelNormal().dot(normalize3(pixelToLightVector))) * lightSource.getDiffuseIntensity();
         float specularCoeff;
+
 
         if (pixelData.getSpecularCoefficient() == 0)
             specularCoeff = max(0, pixelData.getSpecularCoefficient() * (float) pow(pixelToCameraVector.dot(reflectedLightVector), SHININESS) * lightSource.getSpecularIntensity());
